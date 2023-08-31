@@ -1,0 +1,4 @@
+﻿LINQ - Language Integrated Queries
+Запити даних мовою програмування (C#)
+
+Є різновиди LINQ для колекцій (IEnumerable) та Entity (IQueryable)
