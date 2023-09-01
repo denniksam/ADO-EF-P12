@@ -48,6 +48,17 @@
                         Click="Button3_Click"/>
                 <Button Content="4" x:Name="Button4"
                         Click="Button4_Click"/>
+                <Button Content="5" x:Name="DZ"/>
+                <Button Content="N-" x:Name="Button6"
+                        Click="Button6_Click"/>
+                <Button Content="N+" x:Name="Button7"
+                        Click="Button7_Click"/>
+                <Button Content="8" x:Name="Button8"
+                        Click="Button8_Click"/>
+                <Button Content="9" x:Name="Button9"
+                        Click="Button9_Click"/>
+                <Button Content="10" x:Name="Button10"
+                        Click="Button10_Click"/>
             </StackPanel>
             <ListView ItemsSource="{Binding Pairs}">
                 <ListView.View>

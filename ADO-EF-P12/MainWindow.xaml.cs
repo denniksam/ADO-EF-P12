@@ -10,10 +10,12 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
+using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace ADO_EF_P12
 {
@@ -160,8 +162,160 @@ namespace ADO_EF_P12
              * Впорядкувати по назві відділу
              */
         }
-    }
+        #region Генератор - збільшується при кожному зверненні
+        private int _N;
+        public int N { get => _N++; set => _N = value; }
+        #endregion
+        private void Button6_Click(object sender, RoutedEventArgs e)
+        {
+            /* Вивести порядковий номер відділу -- назву відділу
+             * Неправильне рішення
+             */
+            N = 1;
+            var query = dataContext         // SELECT n++, d.Name FROM Departments
+                .Departments                //   -- помилка, операції у запиті
+                .OrderBy(d => d.Name)
+                .Select(d => new Pair()     // SELECT N, d.Name .... =>
+                {                           //  SELECT 1, d.Name ....
+                    Key = (N).ToString(),   // до N є одноразове звертання при
+                    Value = d.Name          // побудові SQL виразу
+                });                         // НЕ багаторазове при перетвореннях
 
+            Pairs.Clear();
+            foreach (var pair in query)
+            {
+                Pairs.Add(pair);
+            }
+            /* Як це працює
+             * var query = ... задає "правило", з якого буде побудований SQL
+             * Який SQL буде у підсумку?
+             *  SELECT 1, d.Name FROM Departments d ORDER BY d.Name
+             *  при формуванні запиту EF "побачить", що до нього входить змінна
+             *  N, він її обрахує і додасть у SQL -- у запиті буде значення N (1)
+             * Ітерування в циклі - по результатах запиту
+             *  1 - Бухгалтерія
+             *  1 - Відділ кадрів
+             *  ...
+             * Об'єкти  pair утворюються з цих результатів, як наслідок усі мають
+             * "1" у ключі
+             * 
+             * N(1) --> SQL --> рез-ти з (1), а не з N
+             */
+        }
+
+        private void Button7_Click(object sender, RoutedEventArgs e)
+        {
+            N = 1;
+            var query = dataContext
+                .Departments
+                .OrderBy(d => d.Name)
+                .AsEnumerable()            // Перетворювач, далі LINQ-Enumerable, також можна .ToList()
+                .Select(d => new Pair()
+                {
+                    Key = (N).ToString(),  // В режимі LINQ-Enumerable це дійсно
+                    Value = d.Name         // повторюється і N збільшується
+                });
+
+            Pairs.Clear();
+            foreach (var pair in query)
+            {
+                Pairs.Add(pair);
+            }
+            /* Відмінності (від Button6)
+             * Запит SQL формується інструкціями, що передують .AsEnumerable()
+             * .Departments
+             * .OrderBy(d => d.Name)   -> SELECT * FROM Departments d ORDER BY d.Name
+             * Запит виконується із результатами 
+             *  id - Бухгалтерія
+             *  id - Відділ кадрів
+             * Ітерування у циклі утворює об'єкти Pair у яких є звертання до N і з 
+             * кожним звертанням N збільшується у гет-тері.
+             *  (*) -> SQL -> Рез-ти з N
+             */
+        }
+
+        /////////////////////////////////////////////////
+
+        private void Button8_Click(object sender, RoutedEventArgs e)
+        {
+            /* GroupJoin - аналог GROUP BY
+             * Завдання: вивести дані
+             * Назва відділу -- кількість співробітників
+             */
+            var query = dataContext           // Запит із групуванням (під одним
+                .Departments                  //  id відділу декілька співробітників)
+                .GroupJoin(                   // 
+                    dataContext.Managers,     // 
+                    d => d.Id,                // Ключ з "одним" значенням
+                    m => m.IdMainDep,         // Ключ з "множинним" значенням
+                    (dep, mans) => new Pair   // (группа) - (один відділ, коллекція співробітників)
+                    {                         // 
+                        Key = dep.Name,       // до першого параметра звертаємось як до об'єкта (одного)
+                        Value = mans.Count()  // до другого - як до колекції (IEnumerable)
+                                .ToString()   // 
+                    }                         // 
+                );                            // 
+        }
+
+        private void Button9_Click(object sender, RoutedEventArgs e)
+        {
+            /* Завдання: вивести дані
+             * Прізвище І.Б. шефа -- кількість підлеглих
+             * 1) всіх
+             * 2) тільки тих, що мають підлеглих
+             */
+
+            // 1) GroupJoin ~ LeftJoin, залишає усіх, у т.ч. без підлеглих
+            var query = dataContext.Managers  // as chef
+                .GroupJoin(
+                    dataContext.Managers, // as sub
+                    chef => chef.Id,
+                    sub => sub.IdChief, 
+                    (chef, subs) => new Pair() 
+                    {
+                        Key = $"{chef.Surname} {chef.Name[0]}. {chef.Secname[0]}.", 
+                        Value = subs.Count().ToString() 
+                    }
+                )
+                .Where(p => Convert.ToInt32(p.Value) > 0);
+
+            Pairs.Clear();
+            foreach (var pair in query)
+            {
+                Pairs.Add(pair);
+            }
+        
+        }
+
+        private void Button10_Click(object sender, RoutedEventArgs e)
+        {
+            /* Знайти однофамільців (згрупувати та подивитись де кількість 
+             * більше ніж 1)
+             */
+            var query = dataContext.Managers
+                .GroupBy(m => m.Surname)  // 
+                .Select(group => new Pair
+                {
+                    Key = group.Key,  // group.Key  --- m => m.Surname
+                    Value = group.Count().ToString()
+                })
+                .Where(p => Convert.ToInt32(p.Value) > 1);
+
+            Pairs.Clear();
+            foreach (var pair in query)
+            {
+                Pairs.Add(pair);
+            }
+        }
+        /* Д.З. Засобами LINQ на основі створеної БД реалізувати запити
+         * Назва відділу -- кількість сумісників (SecDep)
+         * Запит з однофамільцями переробити з нумерацією
+         *  1. Андріяш
+         *  2. Лешків
+         * Вивести трьох співробітників з найбільшою кількістю підлеглих 
+         *  к-сть підлеглих --- П.І.Б.
+         */
+    }
     public class Pair
     {
         public String Key { get; set; } = null!;
