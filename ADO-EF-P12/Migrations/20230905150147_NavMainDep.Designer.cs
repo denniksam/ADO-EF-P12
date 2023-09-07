@@ -4,6 +4,7 @@ using ADO_EF_P12.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ADO_EF_P12.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20230905150147_NavMainDep")]
+    partial class NavMainDep
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -27,9 +30,6 @@ namespace ADO_EF_P12.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("DeleteDt")
-                        .HasColumnType("datetime2");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -96,8 +96,6 @@ namespace ADO_EF_P12.Migrations
 
                     b.HasIndex("IdMainDep");
 
-                    b.HasIndex("IdSecDep");
-
                     b.ToTable("Managers");
                 });
 
@@ -109,13 +107,7 @@ namespace ADO_EF_P12.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("ADO_EF_P12.Data.Entity.Department", "SecDep")
-                        .WithMany()
-                        .HasForeignKey("IdSecDep");
-
                     b.Navigation("MainDep");
-
-                    b.Navigation("SecDep");
                 });
 #pragma warning restore 612, 618
         }

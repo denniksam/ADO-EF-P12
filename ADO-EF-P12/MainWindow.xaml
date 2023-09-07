@@ -39,7 +39,7 @@
 
         <StackPanel Orientation="Vertical" 
                     Grid.Row="1" Grid.Column="0" >
-            <StackPanel Orientation="Horizontal">
+            <WrapPanel Orientation="Horizontal">
                 <Button Content="ПІБ" x:Name="Button1"
                         Click="Button1_Click"/>
                 <Button Content="Dep" x:Name="Button2"
@@ -59,7 +59,11 @@
                         Click="Button9_Click"/>
                 <Button Content="10" x:Name="Button10"
                         Click="Button10_Click"/>
-            </StackPanel>
+                <Button Content="Nav1" x:Name="ButtonNav1"
+                        Click="ButtonNav1_Click"/>
+                <Button Content="Nav2" x:Name="ButtonNav2"
+                        Click="ButtonNav2_Click"/>
+            </WrapPanel>
             <ListView ItemsSource="{Binding Pairs}">
                 <ListView.View>
                     <GridView>
@@ -72,6 +76,33 @@
                     </GridView>
                 </ListView.View>
             </ListView>
+        </StackPanel>
+
+        <StackPanel Orientation="Vertical"
+                    Grid.Column="1">
+            
+            <Button x:Name="AddDepartmentButton"
+                    Content="Add department"
+                    Click="AddDepartmentButton_Click"/>
+            
+            <ListView x:Name="departmentsList" 
+                  ItemsSource="{Binding DepartmentsView}" >
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn Header="Id"
+                        DisplayMemberBinding="{Binding Path=Id}"/>
+                    <GridViewColumn Header="Name"
+                            DisplayMemberBinding="{Binding Path=Name}"/>
+                    </GridView>
+            </ListView.View>
+            <ListView.Resources>
+                <Style TargetType="ListViewItem">
+                    <EventSetter 
+                        Event="MouseDoubleClick"
+                        Handler="ListViewItem_MouseDoubleClick"/>
+                </Style>
+            </ListView.Resources>
+        </ListView>
         </StackPanel>
     </Grid>
 </Window>

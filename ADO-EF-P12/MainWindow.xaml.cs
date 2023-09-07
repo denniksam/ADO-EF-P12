@@ -1,4 +1,7 @@
 ﻿using ADO_EF_P12.Data;
+using ADO_EF_P12.Data.Entity;
+using ADO_EF_P12.Views;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -26,6 +29,7 @@ namespace ADO_EF_P12
     {
         private DataContext dataContext;
         public ObservableCollection<Pair> Pairs { get; set; }
+        public ObservableCollection<Data.Entity.Department> DepartmentsView { get; set; }
         public MainWindow()
         {
             InitializeComponent();
@@ -47,7 +51,9 @@ namespace ADO_EF_P12
                 .Count()
                 .ToString();
 
-
+            dataContext.Departments.Load();
+            DepartmentsView = dataContext.Departments.Local.ToObservableCollection();
+            departmentsList.ItemsSource = DepartmentsView;
         }
 
         private void Button1_Click(object sender, RoutedEventArgs e)
@@ -307,14 +313,129 @@ namespace ADO_EF_P12
                 Pairs.Add(pair);
             }
         }
+
+        private void ButtonNav1_Click(object sender, RoutedEventArgs e)
+        {
+            // робота з навігаційними властивостями:
+            // вивести: співробітник -- назва відділу
+            var query = dataContext
+                .Managers
+                .Include(m => m.MainDep)  // включення навігаційної властивості 
+                .Select(m => new Pair     // (в деяких системах не потрібна - вкл. автоматично)
+                {
+                    Key = m.Surname,
+                    Value = m.MainDep.Name   // навігаційна властивість
+                });
+
+            Pairs.Clear();
+            foreach (var pair in query)
+            {
+                Pairs.Add(pair);
+            }
+        }
+
+        private void ButtonNav2_Click(object sender, RoutedEventArgs e)
+        {
+            // робота з навігаційними властивостями:
+            // вивести: співробітник -- назва відділу (за сумісництвом)
+            var query = dataContext
+                .Managers
+                .Include(m => m.SecDep)   // включення навігаційної властивості 
+                .Select(m => new Pair     // (в деяких системах не потрібна - вкл. автоматично)
+                {
+                    Key = m.Surname,
+                    Value = m.SecDep == null ? "--" : m.SecDep.Name
+                });
+
+            Pairs.Clear();
+            foreach (var pair in query)
+            {
+                Pairs.Add(pair);
+            }
+        }
+
+        private void ListViewItem_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if(sender is ListViewItem item)
+            {
+                if(item.Content is Data.Entity.Department department)
+                {
+                    CrudDepartmentWindow dialog = new()
+                    {
+                        Department = department
+                    };
+                    if (dialog.ShowDialog() ?? false)  // Save or Delete pressed
+                    {
+                        if (dialog.Department != null)  // null - ознака видалення
+                        {
+                            if (dialog.IsDeleted)
+                            {
+                                // м'яке видалення
+                                department.DeleteDt = DateTime.Now;
+                                dataContext.SaveChanges();
+                            }
+                            else
+                            {
+                                // шукаємо відповідний відділ у контексті
+                                var dep = dataContext       // Find - метод, що шукає за Id 
+                                    .Departments            // (тільки за Id). Швидкий,
+                                    .Find(department.Id);   // рекомендований
+
+                                if (dep != null) // якщо знайдено, вносимо зміни
+                                {
+                                    dep.Name = department.Name;
+                                }
+                                // внесення змін не відображається ані на БД, ані на 
+                                // інших запитах. Для внесення змін необхідно викликати
+                                // спеціальний метод.
+                                dataContext.SaveChanges();  // зберігаємо зміни
+
+                                // оновлюємо колекцію видаленням та вставленням нових даних
+                                int index = DepartmentsView.IndexOf(department);
+                                DepartmentsView.Remove(department);
+                                DepartmentsView.Insert(index, department);
+                            }
+                        }
+                        else  // dialog.Department == null  - видалення
+                        {
+                            dataContext.Departments.Remove(department);
+                            dataContext.SaveChanges();
+                        }
+                    }
+                }
+            }
+        }
+
+        private void AddDepartmentButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Create - створення нового відділу
+            // спочатку створюємо новий об'єкт (Entity)
+            Data.Entity.Department newDepartment = new()
+            {
+                Id = Guid.NewGuid(),
+                Name = null!
+            };
+            // заповнюємо його - викликаємо вікно-діалог
+            CrudDepartmentWindow dialog = new()
+            {
+                Department = newDepartment
+            };
+            if (dialog.ShowDialog() ?? false)  // Save or Delete pressed
+            {
+                // Після заповнення - додаємо об'єкт до контексту даних
+                dataContext.Departments.Add(newDepartment);
+                // зберігаємо контекст
+                dataContext.SaveChanges();
+            }
+        }
         /* Д.З. Засобами LINQ на основі створеної БД реалізувати запити
-         * Назва відділу -- кількість сумісників (SecDep)
-         * Запит з однофамільцями переробити з нумерацією
-         *  1. Андріяш
-         *  2. Лешків
-         * Вивести трьох співробітників з найбільшою кількістю підлеглих 
-         *  к-сть підлеглих --- П.І.Б.
-         */
+* Назва відділу -- кількість сумісників (SecDep)
+* Запит з однофамільцями переробити з нумерацією
+*  1. Андріяш
+*  2. Лешків
+* Вивести трьох співробітників з найбільшою кількістю підлеглих 
+*  к-сть підлеглих --- П.І.Б.
+*/
     }
     public class Pair
     {

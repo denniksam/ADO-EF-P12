@@ -22,5 +22,14 @@ namespace ADO_EF_P12.Data.Entity
         public DateTime? DeleteDt    { get; set; }
         public String    Email       { get; set; } = null!;
         public String?   Avatar      { get; set; }  // URL аватарки
+
+
+        ////////////// Navigation props /////////////////////
+        public Department MainDep { get; set; }  // навігаційна властивість
+        public Department? SecDep { get; set; }  // опціональна навігаційна властивість
     }
 }
+/* У власних проєктах додати до сутностей навігаційні властивості
+ * Налаштувати їх відповідним чином
+ * Реалізувати зв'язки даних через ці елементи
+ */
