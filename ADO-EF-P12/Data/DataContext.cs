@@ -32,7 +32,7 @@ namespace ADO_EF_P12.Data
             modelBuilder                          // Налаштування навігаційної
                 .Entity<Manager>()                // властивості. Зазначається:
                 .HasOne(m => m.MainDep)           // - назва нав. властивості (MainDep)
-                .WithMany()                       // - тип відношення (один-до-багатьох)
+                .WithMany(d => d.MainManagers)    // - тип відношення (один-до-багатьох)
                 .HasForeignKey(m => m.IdMainDep)  // - зовнішній ключ \  рівність яких
                 .HasPrincipalKey(d => d.Id);      // - керівний ключ  /  вимагається
             // ... Managers M JOIN Departments D ON M.IdMainDep = D.Id

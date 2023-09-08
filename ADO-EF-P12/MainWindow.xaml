@@ -63,6 +63,8 @@
                         Click="ButtonNav1_Click"/>
                 <Button Content="Nav2" x:Name="ButtonNav2"
                         Click="ButtonNav2_Click"/>
+                <Button Content="Nav3" x:Name="ButtonNav3"
+                        Click="ButtonNav3_Click"/>
             </WrapPanel>
             <ListView ItemsSource="{Binding Pairs}">
                 <ListView.View>
@@ -93,6 +95,9 @@
                         DisplayMemberBinding="{Binding Path=Id}"/>
                     <GridViewColumn Header="Name"
                             DisplayMemberBinding="{Binding Path=Name}"/>
+                    <GridViewColumn Header="Delete"
+                        DisplayMemberBinding="{Binding Path=DeleteDt}"
+                        Width="0"/>
                     </GridView>
             </ListView.View>
             <ListView.Resources>

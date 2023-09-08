@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -30,6 +31,7 @@ namespace ADO_EF_P12
         private DataContext dataContext;
         public ObservableCollection<Pair> Pairs { get; set; }
         public ObservableCollection<Data.Entity.Department> DepartmentsView { get; set; }
+        private ICollectionView departmentsListView;
         public MainWindow()
         {
             InitializeComponent();
@@ -54,6 +56,11 @@ namespace ADO_EF_P12
             dataContext.Departments.Load();
             DepartmentsView = dataContext.Departments.Local.ToObservableCollection();
             departmentsList.ItemsSource = DepartmentsView;
+            // departmentsList.ItemsSource = dataContext.Departments.Local.ToObservableCollection();
+            departmentsListView = 
+                CollectionViewSource.GetDefaultView(DepartmentsView);
+            departmentsListView.Filter = 
+                item => (item as Data.Entity.Department)?.DeleteDt == null;
         }
 
         private void Button1_Click(object sender, RoutedEventArgs e)
@@ -373,6 +380,7 @@ namespace ADO_EF_P12
                                 // м'яке видалення
                                 department.DeleteDt = DateTime.Now;
                                 dataContext.SaveChanges();
+                                departmentsListView.Refresh();
                             }
                             else
                             {
@@ -389,11 +397,7 @@ namespace ADO_EF_P12
                                 // інших запитах. Для внесення змін необхідно викликати
                                 // спеціальний метод.
                                 dataContext.SaveChanges();  // зберігаємо зміни
-
-                                // оновлюємо колекцію видаленням та вставленням нових даних
-                                int index = DepartmentsView.IndexOf(department);
-                                DepartmentsView.Remove(department);
-                                DepartmentsView.Insert(index, department);
+                                departmentsListView.Refresh();
                             }
                         }
                         else  // dialog.Department == null  - видалення
@@ -426,6 +430,27 @@ namespace ADO_EF_P12
                 dataContext.Departments.Add(newDepartment);
                 // зберігаємо контекст
                 dataContext.SaveChanges();
+            }
+        }
+
+        private void ButtonNav3_Click(object sender, RoutedEventArgs e)
+        {
+            // Зворотні навігаційні властивості:
+            // задача: вивести відділ - кількість співробітників
+            var query = dataContext
+                .Departments
+                .Include(d => d.MainManagers)
+                .Where(d => d.DeleteDt == null)
+                .Select(d => new Pair
+                {
+                    Key = d.Name,
+                    Value = d.MainManagers.Count().ToString()
+                });
+
+            Pairs.Clear();
+            foreach (var pair in query)
+            {
+                Pairs.Add(pair);
             }
         }
         /* Д.З. Засобами LINQ на основі створеної БД реалізувати запити

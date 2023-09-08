@@ -13,6 +13,12 @@ namespace ADO_EF_P12.Data.Entity
 
         // додано для м'якого видалення
         public DateTime? DeleteDt { get; set; }
+
+        ///////// Inverse Navigation props /////////////////////
+        
+        // MainManagers - зворотна до Manager.MainDep властивість
+        public IEnumerable<Manager> MainManagers { get; set; }
+
     }
 }
 /* Зміни у контексті, наприклад, додавання нового поля, 
